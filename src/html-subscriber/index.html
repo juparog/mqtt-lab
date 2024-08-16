@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MQTT Client</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.3.5/mqtt.js"
+        integrity="sha512-jfWqI2TixPzfr+5XLUIZsbJS8GXxdWHKmT9etC7h1/xqXBqIg5A47F0dXLJPcx0jwdaMb/6peNmU1o526l+/ow=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <h1>MQTT Client</h1>
+
+    <h4>Potenciometer: <span id="pot" style="color: green"></span></h4>
+
+    <canvas id="myChart"></canvas>
+
+    <script>
+        // mqtt client
+        const client = mqtt.connect("ws://localhost:8888");
+
+        const canvas = document.getElementById("myChart");
+        canvas.height = 75;
+
+        const labels = [];
+
+        const data = {
+            labels: labels,
+            datasets: [
+                {
+                    label: "Potentiometer data",
+                    // backgroundColor: 'rgb(255, 99, 132)',
+                    borderColor: "rgb(255, 99, 132)",
+                    data: [],
+                    pointStyle: "line",
+                },
+            ],
+        };
+
+        const config = {
+            type: "line",
+            data: data,
+            options: {},
+        };
+
+        const myChart = new Chart(canvas, config);
+
+        client.on("connect", () => {
+            console.log("Connected to MQTT broker");
+
+            client.subscribe("pot-topic");
+        });
+
+        client.on("message", (topic, message) => {
+            console.log("Received from publisher: ", message.toString());
+
+            document.getElementById("pot").innerText = message.toString();
+
+            myChart.data.labels.push(new Date().toLocaleTimeString());
+            myChart.data.datasets.forEach((dataset) => {
+                dataset.data.push(message.toString());
+            });
+            myChart.update();
+        });
+    </script>
+</body>
+
+</html>
